@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111318">
+  <title>Território da Leitura 2027</title>
+  <meta name="description" content="Seleção de livros do Território da Leitura 2027.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#">
+      <span class="brand-mark">T</span>
+      <span><b>Território</b><small>da Leitura · 2027</small></span>
+    </a>
+    <div class="top-actions">
+      <button class="ghost-btn" id="favoritesBtn">♡ Favoritos <span id="favoriteCount">0</span></button>
+      <button class="selection-btn" id="selectionBtn">Minha seleção <span id="selectionCount">0</span></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-content">
+        <p class="eyebrow">CATÁLOGO DE LITERATURAS · 2027</p>
+        <h1>Encontre histórias<br><em>que fazem sentido.</em></h1>
+        <p class="hero-copy">Explore a oferta do Território da Leitura por segmento, série e tema/gênero. Favorite suas descobertas e monte a seleção da escola.</p>
+        <div class="hero-stats">
+          <div><strong id="heroTotal">—</strong><span>livros na oferta</span></div>
+          <div><strong>3–4</strong><span>livros por ano*</span></div>
+          <div><strong>2027</strong><span>ciclo de escolha</span></div>
+        </div>
+        <p class="source-note">*Conforme as orientações do material de implantação para Educação Infantil e Anos Iniciais.</p>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="orb orb-a"></div><div class="orb orb-b"></div>
+        <div class="book-stack"><span>TDL</span><i></i><i></i><i></i></div>
+      </div>
+    </section>
+
+    <section class="catalog-shell">
+      <div class="segment-tabs" id="segmentTabs">
+        <button class="segment active" data-segment="TODOS">Todos <span>0</span></button>
+        <button class="segment" data-segment="EDUCAÇÃO INFANTIL">Educação Infantil <span>0</span></button>
+        <button class="segment" data-segment="FUND 1">Anos Iniciais <span>0</span></button>
+        <button class="segment" data-segment="FUND 2">Anos Finais <span>0</span></button>
+      </div>
+
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span>⌕</span>
+          <input id="searchInput" type="search" placeholder="Buscar por título, autor ou tema...">
+        </div>
+        <select id="seriesFilter"><option value="">Todas as séries</option></select>
+        <select id="categoryFilter"><option value="">Todos os temas/gêneros</option></select>
+        <select id="extraFilter"><option value="">Todos os filtros</option></select>
+        <button class="clear-btn" id="clearFilters">Limpar</button>
+      </div>
+
+      <div class="quick-row">
+        <label class="check-pill"><input type="checkbox" id="favoritesOnly"><span>♡ Só favoritos</span></label>
+        <label class="check-pill"><input type="checkbox" id="selectedOnly"><span>✓ Só selecionados</span></label>
+        <div class="result-label"><strong id="resultCount">0</strong> livros encontrados</div>
+        <select id="sortSelect" class="sort-select">
+          <option value="relevance">Ordenar: relevância</option>
+          <option value="title">Título A–Z</option>
+          <option value="author">Autor A–Z</option>
+          <option value="pagesAsc">Páginas: menor → maior</option>
+          <option value="pagesDesc">Páginas: maior → menor</option>
+        </select>
+      </div>
+
+      <div class="selection-strip" id="selectionStrip">
+        <div>
+          <b><span id="selectionStripCount">0</span> livros selecionados</b>
+          <small>Use “Selecionar” nos cards para montar o Excel/PDF da escola.</small>
+        </div>
+        <div class="strip-actions">
+          <button id="exportExcel" class="export-btn" disabled>↥ Excel</button>
+          <button id="exportPdf" class="export-btn" disabled>↥ PDF</button>
+          <button id="clearSelection" class="text-btn">Limpar seleção</button>
+        </div>
+      </div>
+
+      <div class="series-summary" id="seriesSummary"></div>
+      <div class="grid" id="bookGrid"></div>
+      <div class="empty" id="emptyState" hidden>
+        <div class="empty-icon">⌕</div>
+        <h2>Nenhum livro encontrado</h2>
+        <p>Tente outro termo ou limpe os filtros para voltar a explorar o catálogo.</p>
+        <button class="primary-btn" id="emptyClear">Limpar filtros</button>
+      </div>
+    </section>
+  </main>
+
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div><p class="eyebrow">MINHA SELEÇÃO</p><h2>Livros escolhidos</h2></div>
+      <button class="icon-btn" id="closeDrawer">×</button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+    <div class="drawer-foot">
+      <button class="export-btn" id="drawerExcel" disabled>Exportar Excel</button>
+      <button class="export-btn" id="drawerPdf" disabled>Exportar PDF</button>
+    </div>
+  </aside>
+  <div class="backdrop" id="backdrop"></div>
+
+  <dialog id="bookDialog" class="book-dialog">
+    <button class="dialog-close" id="dialogClose">×</button>
+    <div id="dialogContent"></div>
+  </dialog>
+
+  <footer>
+    <div><b>Território da Leitura 2027</b><span>Catálogo de seleção de literaturas</span></div>
+    <a href="https://compartir.stn-neds.com/ts/view/access" target="_blank" rel="noopener">Acessar catálogo digital ↗</a>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
