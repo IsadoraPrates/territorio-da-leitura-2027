@@ -21,6 +21,12 @@ const segmentLabels = {
   "FUND 2": "Anos Finais"
 };
 
+const segClass = {
+  "EDUCAÇÃO INFANTIL": "seg-ei",
+  "FUND 1": "seg-f1",
+  "FUND 2": "seg-f2"
+};
+
 const palettes = {
   "EDUCAÇÃO INFANTIL": ["#c64d36","#e07a45"],
   "FUND 1": ["#6c4fc4","#b05cc8"],
@@ -128,7 +134,7 @@ function cardHtml(book){
   const p=palettes[book.segmento]||["#6c4fc4","#d54f80"];
   const initials=book.titulo.split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase();
   const tags=[...(book.temas||[]).slice(0,3)];
-  return `<article class="card" data-key="${escAttr(k)}" onclick="openBook('${jsq(k)}')">
+  return `<article class="card ${segClass[book.segmento]||""}" data-key="${escAttr(k)}" onclick="openBook('${jsq(k)}')">
     <div class="cover ${book.capaUrl?'has-img':''}" data-title="${escAttr(book.titulo)}" style="background:linear-gradient(135deg,${p[0]},${p[1]})">
       ${book.capaUrl?`<img class="cover-img" src="${escAttr(book.capaUrl)}" alt="Capa do livro ${escAttr(book.titulo)}" loading="lazy" onerror="coverFallback(this)">`:""}
       <span class="cover-tag">${esc(segmentLabels[book.segmento]||book.segmento)}</span>
@@ -316,5 +322,17 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeDrawer();if($(
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
 function escAttr(v){return esc(v);}
 function jsq(v){return String(v).replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
+
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme",t);
+  try{localStorage.setItem("tdl27_theme",t)}catch(e){}
+  $("#themeBtn").textContent = t==="light" ? "☾ Escuro" : "☀ Claro";
+  $("#themeColor").setAttribute("content", t==="light" ? "#f6f4f0" : "#111318");
+}
+(function initTheme(){
+  const cur = document.documentElement.getAttribute("data-theme")==="light" ? "light" : "dark";
+  applyTheme(cur);
+  $("#themeBtn").onclick = () => applyTheme(document.documentElement.getAttribute("data-theme")==="light" ? "dark" : "light");
+})();
 
 init();

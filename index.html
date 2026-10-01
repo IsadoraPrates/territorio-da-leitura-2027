@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#111318">
+  <meta name="theme-color" id="themeColor" content="#111318">
+  <script>try{var t=localStorage.getItem("tdl27_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
   <title>Território da Leitura 2027</title>
   <meta name="description" content="Seleção de livros do Território da Leitura 2027.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,6 +19,7 @@
       <span><b>Território</b><small>da Leitura · 2027</small></span>
     </a>
     <div class="top-actions">
+      <button class="theme-btn" id="themeBtn" type="button" aria-label="Alternar entre tema claro e escuro">☀ Claro</button>
       <button class="ghost-btn" id="favoritesBtn">♡ Favoritos <span id="favoriteCount">0</span></button>
       <button class="selection-btn" id="selectionBtn">Minha seleção <span id="selectionCount">0</span></button>
     </div>
