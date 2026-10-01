@@ -103,7 +103,7 @@ function filteredBooks(){
   if(state.extra==="socio") arr=arr.filter(b=>b.socioemocional==="SIM");
   if(state.search){
     const q=state.search.toLocaleLowerCase("pt-BR");
-    arr=arr.filter(b=>[b.titulo,b.autor,b.temas?.join(" "),b.categoria,b.faixaEscolar].join(" ").toLocaleLowerCase("pt-BR").includes(q));
+    arr=arr.filter(b=>[b.titulo,b.autor,b.temas?.join(" "),b.categoria,b.faixaEscolar,b.resumo].join(" ").toLocaleLowerCase("pt-BR").includes(q));
   }
   if(state.favoritesOnly) arr=arr.filter(b=>state.favorites.has(key(b)));
   if(state.selectedOnly) arr=arr.filter(b=>state.selected.has(key(b)));
@@ -129,11 +129,12 @@ function cardHtml(book){
   const initials=book.titulo.split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase();
   const tags=[...(book.temas||[]).slice(0,3)];
   return `<article class="card" data-key="${escAttr(k)}" onclick="openBook('${jsq(k)}')">
-    <div class="cover" style="background:linear-gradient(135deg,${p[0]},${p[1]})">
+    <div class="cover ${book.capaUrl?'has-img':''}" data-title="${escAttr(book.titulo)}" style="background:linear-gradient(135deg,${p[0]},${p[1]})">
+      ${book.capaUrl?`<img class="cover-img" src="${escAttr(book.capaUrl)}" alt="Capa do livro ${escAttr(book.titulo)}" loading="lazy" onerror="coverFallback(this)">`:""}
       <span class="cover-tag">${esc(segmentLabels[book.segmento]||book.segmento)}</span>
       <button class="heart ${fav?'on':''}" aria-label="Favoritar" onclick="toggleFavorite(event,'${jsq(k)}')">${fav?'♥':'♡'}</button>
-      <div class="cover-title">${esc(book.titulo)}</div>
-      <div style="position:absolute;right:12px;bottom:12px;font:800 12px Inter;color:#fff9">${initials}</div>
+      ${book.capaUrl?"":`<div class="cover-title">${esc(book.titulo)}</div>
+      <div style="position:absolute;right:12px;bottom:12px;font:800 12px Inter;color:#fff9">${initials}</div>`}
     </div>
     <div class="card-body">
       <p class="card-author">${esc(book.autor || "Autor não informado")}</p>
@@ -176,16 +177,27 @@ function toggleSelected(event,k){
 }
 window.toggleFavorite=toggleFavorite; window.toggleSelected=toggleSelected;
 
+function cleanText(v){return String(v||"").replace(/\s+\?\s*$/,"").replace(/\s+/g," ").trim();}
+window.coverFallback=function(img){
+  const c=img.parentElement; if(!c)return;
+  c.classList.remove("has-img"); img.remove();
+  c.insertAdjacentHTML("beforeend",`<div class="cover-title">${esc(c.dataset.title||"")}</div>`);
+};
+
 function getBook(k){return state.books.find(b=>key(b)===k);}
 
 function openBook(k){
   const b=getBook(k); if(!b)return;
   const selected=state.selected.has(k), fav=state.favorites.has(k);
-  $("#dialogContent").innerHTML=`<div class="dialog-inner">
+  const resumo=cleanText(b.resumo);
+  $("#dialogContent").innerHTML=`<div class="dialog-inner ${b.capaUrl?'with-cover':''}">
+    ${b.capaUrl?`<div class="dialog-cover"><img src="${escAttr(b.capaUrl)}" alt="Capa do livro ${escAttr(b.titulo)}" onerror="this.parentElement.remove()"></div>`:""}
+    <div class="dialog-main">
     <div class="dialog-kicker">${esc(segmentLabels[b.segmento]||b.segmento)}</div>
     <h2 class="dialog-title">${esc(b.titulo)}</h2>
     <div class="dialog-author">${esc(b.autor||"Autor não informado")}</div>
     <div class="dialog-tags">${(b.temas||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
+    ${resumo?`<p class="dialog-summary">${esc(resumo)}</p>`:""}
     <div class="dialog-grid">
       <div class="detail-box"><small>Série</small><span>${esc((b.series||[]).join(", ")||"Não informado")}</span></div>
       <div class="detail-box"><small>Tema / gênero</small><span>${esc(b.categoria||"Não informado")}</span></div>
@@ -197,7 +209,9 @@ function openBook(k){
     <div class="dialog-actions">
       <button class="primary" onclick="dialogSelect('${jsq(k)}')">${selected?'✓ Remover da seleção':'+ Selecionar livro'}</button>
       <button onclick="dialogFavorite('${jsq(k)}')">${fav?'♥ Favoritado':'♡ Favoritar'}</button>
+      ${b.linkModerna?`<a href="${escAttr(b.linkModerna)}" target="_blank" rel="noopener">Ver na Moderna ↗</a>`:""}
       <a href="${escAttr(b.catalogoUrl)}" target="_blank" rel="noopener">Abrir catálogo digital ↗</a>
+    </div>
     </div>
   </div>`;
   $("#bookDialog").showModal();
@@ -209,7 +223,7 @@ window.dialogFavorite=function(k){state.favorites.has(k)?state.favorites.delete(
 function renderDrawer(){
   const arr=state.books.filter(b=>state.selected.has(key(b)));
   $("#drawerBody").innerHTML=arr.length?arr.map(b=>`<div class="drawer-item">
-    <div class="mini-cover">${esc(b.titulo.slice(0,2).toUpperCase())}</div>
+    <div class="mini-cover">${b.capaUrl?`<img src="${escAttr(b.capaUrl)}" alt="" loading="lazy" onerror="this.remove()">`:esc(b.titulo.slice(0,2).toUpperCase())}</div>
     <div><b>${esc(b.titulo)}</b><small>${esc(segmentLabels[b.segmento]||b.segmento)} · ${(b.series||[]).join(", ")}</small></div>
     <button class="remove-btn" onclick="removeSelected('${jsq(key(b))}')">×</button>
   </div>`).join(""):`<div class="empty" style="padding:60px 0"><div class="empty-icon">♡</div><h2>Nenhum livro ainda</h2><p>Selecione títulos no catálogo para montar a lista da escola.</p></div>`;
@@ -229,6 +243,7 @@ function exportRows(){
     "Indicação confessional":b.indicacaoConfessional||"",
     "Letra bastão":b.letraBastao||"",
     "Socioemocional":b.socioemocional||"",
+    "Link Moderna":b.linkModerna||"",
     "Item":b.id
   }));
 }
@@ -237,7 +252,7 @@ function exportExcel(){
   if(!state.selected.size)return;
   const rows=exportRows();
   const ws=XLSX.utils.json_to_sheet(rows);
-  ws["!cols"]=[{wch:20},{wch:22},{wch:40},{wch:30},{wch:55},{wch:35},{wch:22},{wch:10},{wch:22},{wch:15},{wch:15},{wch:14}];
+  ws["!cols"]=[{wch:20},{wch:22},{wch:40},{wch:30},{wch:55},{wch:35},{wch:22},{wch:10},{wch:22},{wch:15},{wch:15},{wch:45},{wch:14}];
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Minha seleção");
   XLSX.writeFile(wb,"Territorio_da_Leitura_2027.xlsx");
