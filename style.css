@@ -93,3 +93,48 @@
 [data-theme="light"] footer{border-top-color:#dedad3;color:#6b7080}
 [data-theme="light"] footer b{color:#1b1d22}
 [data-theme="light"] footer a{color:#6a3fc0}
+
+/* ===== filtros com caixas de seleção + escolhas por série ===== */
+:root{--surface:#15181e;--line:#292e38;--text:#f4f1ed;--muted:#8c939f;--hover:#1d2128}
+:root[data-theme="light"]{--surface:#fff;--line:#dcd7ce;--text:#1b1d22;--muted:#6b7080;--hover:#f0ede7}
+.filter-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.search-wrap{flex:1 1 260px;min-width:220px}
+.ms-bar{display:contents}
+.ms{position:relative}
+.ms-btn,.filter-bar select{height:46px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:0 14px;cursor:pointer;font:inherit;font-size:13px}
+.ms-btn.has{border-color:var(--accent)}
+.ms-btn b{background:var(--accent);color:#fff;border-radius:999px;padding:1px 7px;font-size:11px;margin-left:4px}
+.ms-panel{position:absolute;z-index:25;top:calc(100% + 6px);left:0;width:min(340px,86vw);max-height:360px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 20px 50px rgba(0,0,0,.35);padding:6px}
+.ms-panel[hidden]{display:none}
+.ms-opt{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:6px;font-size:13px;color:var(--text);cursor:pointer}
+.ms-opt:hover{background:var(--hover)}
+.ms-opt input{accent-color:var(--accent)}
+.ms-opt span{flex:1}.ms-opt em{font-style:normal;font-size:11px;color:var(--muted)}
+.ms-opt.zero{opacity:.5}
+.ms-foot{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:6px 4px 2px;margin-top:4px}
+.ms-foot button{background:none;border:0;color:var(--muted);font-size:12px;cursor:pointer}
+.ms-none,.none{color:var(--muted);font-size:13px;padding:8px}
+.view-tabs{display:flex;gap:8px;padding:18px 0 6px}
+.vt{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:9px 16px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.vt.active{background:var(--text);color:var(--surface);border-color:var(--text)}
+.vt span{margin-left:6px;opacity:.7}
+.st-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:14px 0}
+.st{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;padding:9px 13px;font:inherit;font-size:13px;cursor:pointer}
+.st.active{border-color:var(--accent);box-shadow:inset 0 -3px 0 var(--accent)}
+.st span{margin-left:7px;font-size:11px;color:var(--muted)}
+.st-head{display:flex;align-items:center;gap:14px;margin:6px 0 14px}
+.st-head h2{font:800 30px "Playfair Display",serif;margin:0}
+.goal{font-size:12px;font-weight:700;border-radius:999px;padding:5px 11px;border:1px solid var(--line);color:var(--muted)}
+.goal.ok{color:#2fa66a;border-color:#2fa66a}.goal.over{color:#e0873a;border-color:#e0873a}.goal.low{color:#b8a14a;border-color:#b8a14a}
+.choice-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.choice-table th,.choice-table td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;font-size:13px}
+.choice-table thead th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.choice-table tbody th{width:34%;font-weight:600;color:var(--muted)}
+.choice-table tr.has th{color:var(--text)}
+.choice-table tr.has{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.chip{display:inline-flex;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:999px;margin:2px 6px 2px 0;overflow:hidden}
+.chip-t{display:flex;align-items:center;gap:7px;background:none;border:0;color:var(--text);font:inherit;font-size:12px;padding:3px 8px 3px 4px;cursor:pointer}
+.chip-t img{width:22px;height:30px;object-fit:cover;border-radius:3px}
+.chip-x{background:none;border:0;border-left:1px solid var(--line);color:var(--muted);cursor:pointer;padding:0 9px;align-self:stretch}
+.st-note{color:var(--muted);font-size:12px;margin-top:14px}
+@media(max-width:760px){.filter-bar{display:flex}.ms-btn,.filter-bar select{flex:1 1 45%}.choice-table tbody th{width:40%}.vt{padding:8px 12px}}

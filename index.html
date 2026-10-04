@@ -45,6 +45,11 @@
     </section>
 
     <section class="catalog-shell">
+      <div class="view-tabs" id="viewTabs">
+        <button class="vt active" data-view="catalogo">Catálogo</button>
+        <button class="vt" data-view="escolhas">Escolhas por série <span id="choiceCount">0</span></button>
+      </div>
+      <div id="catalogView">
       <div class="segment-tabs" id="segmentTabs">
         <button class="segment active" data-segment="TODOS">Todos <span>0</span></button>
         <button class="segment" data-segment="EDUCAÇÃO INFANTIL">Educação Infantil <span>0</span></button>
@@ -57,8 +62,7 @@
           <span>⌕</span>
           <input id="searchInput" type="search" placeholder="Buscar por título, autor ou tema...">
         </div>
-        <select id="seriesFilter"><option value="">Todas as séries</option></select>
-        <select id="categoryFilter"><option value="">Todos os temas/gêneros</option></select>
+        <div class="ms-bar" id="msBar"></div>
         <select id="extraFilter"><option value="">Todos os filtros</option></select>
         <button class="clear-btn" id="clearFilters">Limpar</button>
       </div>
@@ -96,6 +100,8 @@
         <p>Tente outro termo ou limpe os filtros para voltar a explorar o catálogo.</p>
         <button class="primary-btn" id="emptyClear">Limpar filtros</button>
       </div>
+      </div>
+      <div id="choicesView" hidden></div>
     </section>
   </main>
 
