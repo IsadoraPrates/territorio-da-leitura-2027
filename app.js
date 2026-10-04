@@ -11,7 +11,8 @@ const state = {
   selectedOnly: false,
   sort: "relevance",
   favorites: new Set(JSON.parse(localStorage.getItem("tdl27_favorites") || "[]")),
-  selected: new Set(JSON.parse(localStorage.getItem("tdl27_selected") || "[]"))
+  selected: new Set(JSON.parse(localStorage.getItem("tdl27_selected") || "[]")),
+  assign: JSON.parse(localStorage.getItem("tdl27_assign") || "{}")
 };
 
 const $ = (s) => document.querySelector(s);
@@ -53,6 +54,7 @@ async function init(){
 function persist(){
   localStorage.setItem("tdl27_favorites", JSON.stringify([...state.favorites]));
   localStorage.setItem("tdl27_selected", JSON.stringify([...state.selected]));
+  localStorage.setItem("tdl27_assign", JSON.stringify(state.assign));
 }
 
 function key(book){ return `${book.segmento}::${book.id}`; }
@@ -191,7 +193,7 @@ function renderSeriesSummary(){
   const arr=state.books.filter(b=>state.selected.has(key(b)));
   if(!arr.length){$("#seriesSummary").innerHTML="";return;}
   const counts={};
-  arr.forEach(b=>effSeries(b).forEach(s=>counts[s]=(counts[s]||0)+1));
+  arr.forEach(b=>chosenSeries(b).forEach(s=>counts[s]=(counts[s]||0)+1));
   $("#seriesSummary").innerHTML=Object.entries(counts).sort((a,b)=>seriesSort(a[0],b[0])).map(([s,n])=>`<span class="series-chip"><strong>${esc(s)}</strong> · ${n} selecionado${n===1?"":"s"}</span>`).join("");
 }
 
@@ -210,11 +212,29 @@ function toggleFavorite(event,k){
   state.favorites.has(k)?state.favorites.delete(k):state.favorites.add(k);
   persist(); render();
 }
-function toggleSelected(event,k){
-  event.stopPropagation();
-  state.selected.has(k)?state.selected.delete(k):state.selected.add(k);
-  persist(); render();
+function toggleSelected(event,k){ event.stopPropagation(); pickSelect(k); }
+const seriesShort=x=>String(x).replace("Educação Infantil ","EI ");
+const chosenSeries=b=>{const a=state.assign[key(b)];return a&&a.length?a:effSeries(b);};
+function pickSelect(k){
+  if(state.selected.has(k)){state.selected.delete(k);delete state.assign[k];persist();render();return;}
+  const b=getBook(k), opts=effSeries(b);
+  if(opts.length<=1){state.selected.add(k); if(opts.length) state.assign[k]=[opts[0]]; persist();render();return;}
+  askSeries(k);
 }
+function askSeries(k){
+  const b=getBook(k), opts=effSeries(b), cur=(state.assign[k]||[])[0]||opts.find(x=>state.sel.series.has(x))||"";
+  $("#seriesDialogContent").innerHTML=`<div class="dialog-inner"><div class="dialog-kicker">ESCOLHER SÉRIE</div>
+    <h2 class="dialog-title" style="font-size:26px">${esc(b.titulo)}</h2>
+    <p class="series-ask">Para qual série você está escolhendo este livro?</p>
+    <div class="series-opts">${opts.map(x=>`<label class="series-opt"><input type="radio" name="serieEsc" value="${escAttr(x)}" ${x===cur?"checked":""}><span>${esc(x)}</span></label>`).join("")}</div>
+    <div class="dialog-actions"><button class="primary" id="serieOk" ${cur?"":"disabled"}>Confirmar</button><button id="serieCancel">Cancelar</button></div></div>`;
+  const dlg=$("#seriesDialog");
+  dlg.querySelectorAll('input[name="serieEsc"]').forEach(i=>i.onchange=()=>{$("#serieOk").disabled=false;});
+  $("#serieCancel").onclick=()=>dlg.close();
+  $("#serieOk").onclick=()=>{const v=dlg.querySelector('input[name="serieEsc"]:checked');if(!v)return;state.selected.add(k);state.assign[k]=[v.value];persist();dlg.close();render();};
+  dlg.showModal();
+}
+window.reassign=function(k){askSeries(k);};
 window.toggleFavorite=toggleFavorite; window.toggleSelected=toggleSelected;
 
 function cleanText(v){return String(v||"").replace(/\s+\?\s*$/,"").replace(/\s+/g," ").trim();}
@@ -257,23 +277,23 @@ function openBook(k){
   $("#bookDialog").showModal();
 }
 window.openBook=openBook;
-window.dialogSelect=function(k){state.selected.has(k)?state.selected.delete(k):state.selected.add(k);persist();$("#bookDialog").close();render();};
+window.dialogSelect=function(k){$("#bookDialog").close();pickSelect(k);};
 window.dialogFavorite=function(k){state.favorites.has(k)?state.favorites.delete(k):state.favorites.add(k);persist();$("#bookDialog").close();render();};
 
 function renderDrawer(){
   const arr=state.books.filter(b=>state.selected.has(key(b)));
   $("#drawerBody").innerHTML=arr.length?arr.map(b=>`<div class="drawer-item">
     <div class="mini-cover">${b.capaUrl?`<img src="${escAttr(b.capaUrl)}" alt="" loading="lazy" onerror="this.remove()">`:esc(b.titulo.slice(0,2).toUpperCase())}</div>
-    <div><b>${esc(b.titulo)}</b><small>${esc(segmentLabels[b.segmento]||b.segmento)} · ${(b.series||[]).join(", ")}</small></div>
+    <div><b>${esc(b.titulo)}</b><small>${esc(segmentLabels[b.segmento]||b.segmento)} · ${chosenSeries(b).map(seriesShort).join(", ")}</small></div>
     <button class="remove-btn" onclick="removeSelected('${jsq(key(b))}')">×</button>
   </div>`).join(""):`<div class="empty" style="padding:60px 0"><div class="empty-icon">♡</div><h2>Nenhum livro ainda</h2><p>Selecione títulos no catálogo para montar a lista da escola.</p></div>`;
 }
-window.removeSelected=function(k){state.selected.delete(k);persist();render();};
+window.removeSelected=function(k){state.selected.delete(k);delete state.assign[k];persist();render();};
 
 function exportRows(){
   return state.books.filter(b=>state.selected.has(key(b))).map(b=>({
     "Segmento":segmentLabels[b.segmento]||b.segmento,
-    "Série(s)":(b.series||[]).join(", "),
+    "Série(s)":chosenSeries(b).join(", "),
     "Título":b.titulo,
     "Autor":b.autor,
     "Tema(s)":(b.temas||[]).join("; "),
@@ -367,15 +387,17 @@ $("#closeDrawer").onclick=closeDrawer;$("#backdrop").onclick=closeDrawer;
 $("#dialogClose").onclick=()=>$("#bookDialog").close();
 $("#exportExcel").onclick=exportExcel;$("#drawerExcel").onclick=exportExcel;
 $("#exportPdf").onclick=exportPdf;$("#drawerPdf").onclick=exportPdf;
-$("#clearSelection").onclick=()=>{state.selected.clear();persist();render()};
+$("#clearSelection").onclick=()=>{state.selected.clear();state.assign={};persist();render()};
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeDrawer();if($("#bookDialog").open)$("#bookDialog").close()}});
 
 
 const VIEW_TABS=[["Maternal","Maternal"],["Educação Infantil 1","EI 1"],["Educação Infantil 2","EI 2"],["Educação Infantil 3","EI 3"],["1º ano","1º ano"],["2º ano","2º ano"],["3º ano","3º ano"],["4º ano","4º ano"],["5º ano","5º ano"],["AF","Anos Finais"]];
-const inSeries=(b,s)=>s==="AF"?b.segmento==="FUND 2":effSeries(b).includes(s);
+const inSeries=(b,s)=>s==="AF"?b.segmento==="FUND 2":chosenSeries(b).includes(s);
+const pending=b=>!(state.assign[key(b)]||[]).length&&effSeries(b).length>1;
+const S_AF=b=>b.segmento==="FUND 2"&&(state.assign[key(b)]||[])[0]?` <small>· ${esc(state.assign[key(b)][0])}</small>`:"";
 function chipHtml(b){
   const k=key(b);
-  return `<span class="chip"><button class="chip-t" onclick="openBook('${jsq(k)}')">${b.capaUrl?`<img src="${escAttr(b.capaUrl)}" alt="" loading="lazy" onerror="this.remove()">`:""}${esc(b.titulo)}</button><button class="chip-x" title="Remover da seleção" onclick="removeSelected('${jsq(k)}')">×</button></span>`;
+  return `<span class="chip ${pending(b)?'pending':''}"><button class="chip-t" onclick="openBook('${jsq(k)}')">${b.capaUrl?`<img src="${escAttr(b.capaUrl)}" alt="" loading="lazy" onerror="this.remove()">`:""}${esc(b.titulo)}${S_AF(b)}</button><button class="chip-s" title="Trocar de série" onclick="reassign('${jsq(k)}')">↔</button><button class="chip-x" title="Remover da seleção" onclick="removeSelected('${jsq(k)}')">×</button></span>`;
 }
 function renderChoices(){
   const box=$("#choicesView"); const sel=state.books.filter(b=>state.selected.has(key(b)));
@@ -390,7 +412,7 @@ function renderChoices(){
     rows=table.map(t=>{const bs=mine.filter(b=>!(b.series||[]).includes("Todos")&&getI(b).includes(t));bs.forEach(b=>used.add(key(b)));
       return `<tr class="${bs.length?'has':''}"><th>${esc(t)}</th><td>${bs.map(chipHtml).join("")||'<span class="none">—</span>'}</td></tr>`}).join("");
     const todos=mine.filter(b=>(b.series||[]).includes("Todos")); todos.forEach(b=>used.add(key(b)));
-    if(todos.length) rows+=`<tr class="has"><th>Socioemocional · todos os anos</th><td>${todos.map(chipHtml).join("")}</td></tr>`;
+    if(todos.length) rows+=`<tr class="has"><th>Socioemocional</th><td>${todos.map(chipHtml).join("")}</td></tr>`;
   } else {
     const g={}; mine.forEach(b=>((b.generoEF2||[]).length?b.generoEF2:["Sem gênero"]).forEach(x=>(g[x]=g[x]||[]).push(b)));
     rows=Object.keys(g).sort(localeSort).map(t=>`<tr class="has"><th>${esc(t)}</th><td>${g[t].map(chipHtml).join("")}</td></tr>`).join(""); mine.forEach(b=>used.add(key(b)));
@@ -401,7 +423,7 @@ function renderChoices(){
   box.innerHTML=`<div class="st-tabs" id="stTabs">${tabs}</div>
   <div class="st-head"><h2>${esc((VIEW_TABS.find(x=>x[0]===S)||[0,S])[1])}</h2>${meta}</div>
   ${mine.length||table?`<table class="choice-table"><thead><tr><th>${head}</th><th>Livros escolhidos</th></tr></thead><tbody>${rows}</tbody></table>`:'<p class="none">Nenhum livro escolhido ainda.</p>'}
-  <p class="st-note">Um livro aparece em todas as séries a que pertence. Para escolher mais livros, volte ao Catálogo e use “Selecionar”.</p>`;
+  ${sel.some(pending)?`<p class="st-warn">Alguns livros ainda aparecem em mais de uma série (os destacados). Clique em ↔ para escolher a série de cada um.</p>`:""}<p class="st-note">Cada livro aparece só na série escolhida. Para trocar, use ↔; para escolher mais livros, volte ao Catálogo e use “Selecionar”.</p>`;
 }
 document.addEventListener("click",e=>{const t=e.target.closest("#stTabs .st"); if(t){state.viewSeries=t.dataset.s;renderChoices();}});
 
