@@ -18,6 +18,12 @@ const state = {
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
+const CATALOG_LOGIN = "degust-literatura-102023";
+const CATALOG_PASS = "Literatura102023";
+const COPY_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+const CHECK_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>';
+const credHtml = (label,value) => `<span class="cred-item"><small>${label}</small><code>${esc(value)}</code><button type="button" class="cred-copy" data-copy="${escAttr(value)}" title="Copiar ${label.toLowerCase()}" aria-label="Copiar ${label.toLowerCase()}">${COPY_ICON}</button></span>`;
+
 const segmentLabels = {
   "EDUCAÇÃO INFANTIL": "Educação Infantil",
   "FUND 1": "Anos Iniciais",
@@ -251,7 +257,7 @@ function openBook(k){
   const selected=state.selected.has(k), fav=state.favorites.has(k);
   const resumo=cleanText(b.resumo);
   $("#dialogContent").innerHTML=`<div class="dialog-inner ${b.capaUrl?'with-cover':''}">
-    ${b.capaUrl?`<div class="dialog-cover"><img src="${escAttr(b.capaUrl)}" alt="Capa do livro ${escAttr(b.titulo)}" onerror="this.parentElement.remove()"></div>`:""}
+    ${b.capaUrl?`<div class="dialog-cover"><img src="${escAttr(b.capaUrl)}" alt="Capa do livro ${escAttr(b.titulo)}" onerror="this.closest('.dialog-inner').classList.remove('with-cover');this.parentElement.remove()"></div>`:""}
     <div class="dialog-main">
     <div class="dialog-kicker">${esc(segmentLabels[b.segmento]||b.segmento)}</div>
     <h2 class="dialog-title">${esc(b.titulo)}</h2>
@@ -262,6 +268,7 @@ function openBook(k){
       <div class="detail-box"><small>Série</small><span>${esc((b.series||[]).join(", ")||"Não informado")}</span></div>
       <div class="detail-box"><small>Tema / gênero</small><span>${esc(b.categoria||"Não informado")}</span></div>
       <div class="detail-box"><small>Faixa escolar</small><span>${esc(b.faixaEscolar||"Não informado")}</span></div>
+      ${b.isbn?`<div class="detail-box"><small>ISBN</small><span>${esc(b.isbn)}</span></div>`:""}
       <div class="detail-box"><small>Extensão</small><span>${b.paginas?b.paginas+" páginas":"Não informado"}</span></div>
       <div class="detail-box"><small>Indicação confessional</small><span>${esc(b.indicacaoConfessional||"Não informado")}</span></div>
       ${b.letraBastao?`<div class="detail-box"><small>Letra bastão</small><span>${esc(b.letraBastao)}</span></div>`:""}
@@ -271,6 +278,7 @@ function openBook(k){
       <button onclick="dialogFavorite('${jsq(k)}')">${fav?'♥ Favoritado':'♡ Favoritar'}</button>
       ${b.linkModerna?`<a href="${escAttr(b.linkModerna)}" target="_blank" rel="noopener">Ver na Moderna ↗</a>`:""}
       <a href="${escAttr(b.catalogoUrl)}" target="_blank" rel="noopener">Abrir catálogo digital ↗</a>
+      <div class="cred" aria-label="Acesso ao catálogo digital">${credHtml("Login",CATALOG_LOGIN)}${credHtml("Senha",CATALOG_PASS)}</div>
     </div>
     </div>
   </div>`;
@@ -296,6 +304,7 @@ function exportRows(){
     "Série(s)":chosenSeries(b).join(", "),
     "Título":b.titulo,
     "Autor":b.autor,
+    "ISBN":b.isbn||"",
     "Tema(s)":(b.temas||[]).join("; "),
     "Tema/Gênero":b.categoria,
     "Faixa escolar":b.faixaEscolar,
@@ -315,7 +324,7 @@ function exportExcel(){
   if(!state.selected.size)return;
   const rows=exportRows();
   const ws=XLSX.utils.json_to_sheet(rows);
-  ws["!cols"]=[{wch:20},{wch:22},{wch:40},{wch:30},{wch:55},{wch:35},{wch:22},{wch:10},{wch:22},{wch:15},{wch:15},{wch:35},{wch:30},{wch:20},{wch:45},{wch:14}];
+  ws["!cols"]=[{wch:20},{wch:22},{wch:40},{wch:30},{wch:18},{wch:55},{wch:35},{wch:22},{wch:10},{wch:22},{wch:15},{wch:15},{wch:35},{wch:30},{wch:20},{wch:45},{wch:14}];
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Minha seleção");
   XLSX.writeFile(wb,"Territorio_da_Leitura_2027.xlsx");
@@ -426,6 +435,15 @@ function renderChoices(){
   ${sel.some(pending)?`<p class="st-warn">Alguns livros ainda aparecem em mais de uma série (os destacados). Clique em ↔ para escolher a série de cada um.</p>`:""}<p class="st-note">Cada livro aparece só na série escolhida. Para trocar, use ↔; para escolher mais livros, volte ao Catálogo e use “Selecionar”.</p>`;
 }
 document.addEventListener("click",e=>{const t=e.target.closest("#stTabs .st"); if(t){state.viewSeries=t.dataset.s;renderChoices();}});
+
+document.addEventListener("click",async e=>{
+  const btn=e.target.closest("[data-copy]"); if(!btn)return;
+  const text=btn.dataset.copy;
+  try{ await navigator.clipboard.writeText(text); }
+  catch(err){ const t=document.createElement("textarea"); t.value=text; t.style.position="fixed"; t.style.opacity="0"; document.body.appendChild(t); t.select(); try{document.execCommand("copy")}catch(_){} t.remove(); }
+  btn.innerHTML=CHECK_ICON; btn.classList.add("done");
+  setTimeout(()=>{btn.innerHTML=COPY_ICON; btn.classList.remove("done");},1600);
+});
 
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
 function escAttr(v){return esc(v);}

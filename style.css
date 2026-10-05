@@ -150,3 +150,11 @@
 .chip.pending{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 .chip-t small{color:var(--muted)}
 .st-warn{color:var(--accent);font-size:13px;margin:12px 0 0}
+
+.cred{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;flex-basis:100%}
+.cred-item{display:inline-flex;align-items:center;gap:8px;border:1px dashed var(--line);background:var(--surface);color:var(--text);border-radius:8px;padding:6px 6px 6px 12px;font-size:12px}
+.cred-item small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.cred-item code{font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;user-select:all}
+.dialog-actions .cred-copy{display:grid;place-items:center;width:28px;height:28px;padding:0;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
+.dialog-actions .cred-copy:hover{color:var(--text);border-color:var(--accent)}
+.dialog-actions .cred-copy.done{color:#2fa66a;border-color:#2fa66a}
