@@ -19,6 +19,7 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
 const CATALOG_LOGIN = "degust-literatura-102023";
+const CATALOG_PASS = "Literatura102023";
 const COPY_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
 const CHECK_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>';
 const credHtml = (label,value) => `<span class="cred-item"><small>${label}</small><code>${esc(value)}</code><button type="button" class="cred-copy" data-copy="${escAttr(value)}" title="Copiar ${label.toLowerCase()}" aria-label="Copiar ${label.toLowerCase()}">${COPY_ICON}</button></span>`;
@@ -277,7 +278,7 @@ function openBook(k){
       <button onclick="dialogFavorite('${jsq(k)}')">${fav?'♥ Favoritado':'♡ Favoritar'}</button>
       ${b.linkModerna?`<a href="${escAttr(b.linkModerna)}" target="_blank" rel="noopener">Ver na Moderna ↗</a>`:""}
       <a href="${escAttr(b.catalogoUrl)}" target="_blank" rel="noopener">Abrir catálogo digital ↗</a>
-      <div class="cred" aria-label="Acesso ao catálogo digital">${credHtml("Login",CATALOG_LOGIN)}</div>
+      <div class="cred" aria-label="Acesso ao catálogo digital">${credHtml("Login",CATALOG_LOGIN)}${credHtml("Senha",CATALOG_PASS)}</div>
     </div>
     </div>
   </div>`;
