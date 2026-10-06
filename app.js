@@ -19,7 +19,6 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
 const CATALOG_LOGIN = "degust-literatura-102023";
-const CATALOG_PASS = "Literatura102023";
 const COPY_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
 const CHECK_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>';
 const credHtml = (label,value) => `<span class="cred-item"><small>${label}</small><code>${esc(value)}</code><button type="button" class="cred-copy" data-copy="${escAttr(value)}" title="Copiar ${label.toLowerCase()}" aria-label="Copiar ${label.toLowerCase()}">${COPY_ICON}</button></span>`;
@@ -278,7 +277,7 @@ function openBook(k){
       <button onclick="dialogFavorite('${jsq(k)}')">${fav?'♥ Favoritado':'♡ Favoritar'}</button>
       ${b.linkModerna?`<a href="${escAttr(b.linkModerna)}" target="_blank" rel="noopener">Ver na Moderna ↗</a>`:""}
       <a href="${escAttr(b.catalogoUrl)}" target="_blank" rel="noopener">Abrir catálogo digital ↗</a>
-      <div class="cred" aria-label="Acesso ao catálogo digital">${credHtml("Login",CATALOG_LOGIN)}${credHtml("Senha",CATALOG_PASS)}</div>
+      <div class="cred" aria-label="Acesso ao catálogo digital">${credHtml("Login",CATALOG_LOGIN)}</div>
     </div>
     </div>
   </div>`;
@@ -320,7 +319,7 @@ function exportRows(){
   }));
 }
 
-function exportExcel(){
+function exportExcelSimples(){
   if(!state.selected.size)return;
   const rows=exportRows();
   const ws=XLSX.utils.json_to_sheet(rows);
@@ -328,6 +327,67 @@ function exportExcel(){
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Minha seleção");
   XLSX.writeFile(wb,"Territorio_da_Leitura_2027.xlsx");
+}
+
+
+/* ===== Exportação no modelo oficial de adoção (modelo_adocao.xlsx) ===== */
+const rng=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
+const ADOCAO=[
+  {name:"Educação Infantil",slots:{"Maternal":rng(12,15),"Educação Infantil 1":rng(17,20),"Educação Infantil 2":rng(22,25),"Educação Infantil 3":rng(27,30)}},
+  {name:"Ensino Fundamental Anos Iniciai",slots:{"1º ano":rng(12,15),"2º ano":rng(17,20),"3º ano":rng(22,25),"4º ano":rng(27,30),"5º ano":rng(32,35)}},
+  {name:"Ensino Fundamental Anos Finais",slots:{"6º ano":rng(12,15),"7º ano":rng(17,20),"8º ano":rng(22,25),"9º ano":rng(27,30)}}
+];
+const SERIE_T={"Maternal":"Maternal","Educação Infantil 1":"Infantil I","Educação Infantil 2":"Infantil II","Educação Infantil 3":"Infantil III","1º ano":"1º","2º ano":"2º","3º ano":"3º","4º ano":"4º","5º ano":"5º","6º ano":"6º","7º ano":"7º","8º ano":"8º","9º ano":"9º"};
+const SEG_R={"EDUCAÇÃO INFANTIL":"Infantil","FUND 1":"Anos Iniciais","FUND 2":"Anos Finais"};
+const exportSerie=b=>{const a=state.assign[key(b)];return (a&&a[0])||effSeries(b)[0]||"";};
+function buildAdocao(){
+  const sel=state.books.filter(b=>state.selected.has(key(b))).sort((a,b)=>localeSort(a.titulo,b.titulo));
+  const pend=sel.filter(b=>!(state.assign[key(b)]||[]).length&&effSeries(b).length>1).length;
+  const sheets=ADOCAO.map(s=>({name:s.name,slots:s.slots,cells:[]})), used={}, extras=[];
+  sel.forEach(b=>{
+    const ser=exportSerie(b), sh=sheets.find(s=>s.slots[ser]), pos=used[ser]||0;
+    if(!sh||pos>=sh.slots[ser].length){extras.push({b,ser});return;}
+    used[ser]=pos+1; const r=sh.slots[ser][pos];
+    sh.cells.push({a:`E${r}`,v:b.isbn?Number(String(b.isbn).replace(/\D/g,"")):null},{a:`F${r}`,v:b.titulo},{a:`M${r}`,v:b.autor||""},{a:`R${r}`,v:SEG_R[b.segmento]},{a:`T${r}`,v:SERIE_T[ser]});
+  });
+  return {sheets,extras,pend};
+}
+async function exportExcel(){
+  if(!state.selected.size)return;
+  const {sheets,extras,pend}=buildAdocao();
+  if(pend && !confirm(`${pend} livro(s) ainda não têm série escolhida e serão colocados na primeira série possível.\n\nPara corrigir, use a aba "Escolhas por série" e o botão ↔.\n\nExportar mesmo assim?`)) return;
+  const escola=(prompt("Nome da escola (opcional):","")||"").trim();
+  const simm=(prompt("Código SIMMWEB (opcional):","")||"").trim();
+  try{
+    if(!window.ExcelJS) throw new Error("biblioteca ExcelJS não carregou");
+    const resp=await fetch("modelo_adocao.xlsx"); if(!resp.ok) throw new Error("arquivo modelo_adocao.xlsx não encontrado");
+    const wb=new ExcelJS.Workbook(); await wb.xlsx.load(await resp.arrayBuffer());
+    const THIN={top:{style:"thin"},left:{style:"thin"},bottom:{style:"thin"},right:{style:"thin"}};
+    sheets.forEach(s=>{
+      const ws=wb.getWorksheet(s.name); if(!ws) throw new Error("aba não encontrada: "+s.name);
+      if(escola) ws.getCell("E10").value="NOME DA ESCOLA: "+escola;
+      if(simm) ws.getCell("O10").value="SIMMWEB: "+simm;
+      s.cells.forEach(c=>{ if(c.v!==null&&c.v!=="") ws.getCell(c.a).value=c.v; });
+      if(s.cells.some(c=>c.a==="F20")&&s.name.includes("Iniciai")) ["F20","M20","T20"].forEach(a=>{ws.getCell(a).border=THIN;});
+    });
+    if(extras.length){
+      const ex=wb.addWorksheet("Excedentes");
+      ex.addRow(["Livros além das linhas disponíveis no modelo"]); ex.addRow([]);
+      ex.addRow(["ISBN","Título","Autor","Segmento","Ano/Série"]);
+      extras.forEach(({b,ser})=>ex.addRow([b.isbn?Number(String(b.isbn).replace(/\D/g,"")):"",b.titulo,b.autor||"",SEG_R[b.segmento],SERIE_T[ser]||ser]));
+      ex.columns=[{width:18},{width:48},{width:30},{width:16},{width:14}];
+    }
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+    const url=URL.createObjectURL(blob), a=document.createElement("a");
+    a.href=url; a.download=`${(escola||"Nome da Escola").replace(/[\\/:*?"<>|]/g,"")} - SIM - Território da Leitura.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),3000);
+    if(extras.length) alert(`${extras.length} livro(s) não couberam nas linhas do modelo e foram para a aba "Excedentes".`);
+  }catch(err){
+    console.error(err);
+    alert("Não foi possível gerar a planilha no modelo ("+err.message+"). Vou baixar a versão simples.");
+    exportExcelSimples();
+  }
 }
 
 function exportPdf(){
