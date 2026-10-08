@@ -276,6 +276,7 @@ function openBook(k){
       <button class="primary" onclick="dialogSelect('${jsq(k)}')">${selected?'✓ Remover da seleção':'+ Selecionar livro'}</button>
       <button onclick="dialogFavorite('${jsq(k)}')">${fav?'♥ Favoritado':'♡ Favoritar'}</button>
       ${b.linkModerna?`<a href="${escAttr(b.linkModerna)}" target="_blank" rel="noopener">Ver na Moderna ↗</a>`:""}
+      ${b.videoAutor?`<a class="video-btn" href="${escAttr(b.videoAutor)}" target="_blank" rel="noopener">▶ Vídeo do autor</a>`:""}
       <a href="${escAttr(b.catalogoUrl)}" target="_blank" rel="noopener">Abrir catálogo digital ↗</a>
       <div class="cred" aria-label="Acesso ao catálogo digital">${credHtml("Login",CATALOG_LOGIN)}</div>
     </div>

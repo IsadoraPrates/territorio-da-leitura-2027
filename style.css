@@ -158,3 +158,8 @@
 .dialog-actions .cred-copy{display:grid;place-items:center;width:28px;height:28px;padding:0;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
 .dialog-actions .cred-copy:hover{color:var(--text);border-color:var(--accent)}
 .dialog-actions .cred-copy.done{color:#2fa66a;border-color:#2fa66a}
+
+.dialog-actions a.video-btn{border-color:#d9363e;color:#ff6b73}
+.dialog-actions a.video-btn:hover{background:#d9363e;color:#fff}
+[data-theme="light"] .dialog-actions a.video-btn{color:#c2262d;border-color:#d9363e}
+[data-theme="light"] .dialog-actions a.video-btn:hover{background:#d9363e;color:#fff}
