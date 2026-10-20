@@ -49,6 +49,7 @@ async function init(){
     $("#heroTotal").textContent = state.books.length;
     renderSegmentCounts();
     populateFilters();
+    importShared();
     render();
   } catch (error) {
     $("#bookGrid").innerHTML = `<div class="empty"><div class="empty-icon">!</div><h2>Não foi possível carregar o catálogo</h2><p>Publique os quatro arquivos juntos no GitHub Pages ou Netlify.</p></div>`;
@@ -208,7 +209,7 @@ function updateCounts(){
   $("#selectionStripCount").textContent=state.selected.size;
   const disabled=state.selected.size===0;
   $("#exportExcel").disabled=disabled; $("#exportPdf").disabled=disabled;
-  $("#drawerExcel").disabled=disabled; $("#drawerPdf").disabled=disabled;
+  $("#drawerExcel").disabled=disabled; $("#drawerPdf").disabled=disabled; if($("#shareBtn"))$("#shareBtn").disabled=disabled;
   renderDrawer();
 }
 
@@ -1323,3 +1324,36 @@ bi54bWxQSwECLQAUAAYACAAAACEAkAUGqrYBAABHAwAAEQAAAAAAAAAAAAAAAACk2QAAZG9jUHJvcHMv
 AAYACAAAACEAlvPYNxQCAAAgBQAAEAAAAAAAAAAAAAAAAACR3AAAZG9jUHJvcHMvYXBwLnhtbFBLBQYAAAAAHAAcAM4HAADb3wAA
 AAA=
 `;
+
+
+/* ===== Compartilhar seleção por link ===== */
+function shareLink(){
+  const items=[...state.selected].map(k=>{const p=k.split("::");return [p[0],p[1],(state.assign[k]||[])[0]||""];});
+  const json=JSON.stringify({v:1,s:items});
+  const b64=btoa(unescape(encodeURIComponent(json))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  return location.origin+location.pathname+"#sel="+b64;
+}
+function importShared(){
+  const m=location.hash.match(/^#sel=(.+)$/); if(!m) return;
+  try{
+    let b=m[1].replace(/-/g,"+").replace(/_/g,"/"); while(b.length%4) b+="=";
+    const data=JSON.parse(decodeURIComponent(escape(atob(b))));
+    const valid=(data.s||[]).filter(x=>state.books.some(bk=>key(bk)===x[0]+"::"+x[1]));
+    if(!valid.length){alert("O link não trouxe livros válidos.");return;}
+    if(state.selected.size && !confirm("Este link traz "+valid.length+" livros selecionados.\n\nOK = substituir a sua seleção atual ("+state.selected.size+" livros)\nCancelar = manter a sua seleção")){
+      history.replaceState(null,"",location.pathname+location.search);return;
+    }
+    state.selected=new Set(); state.assign={};
+    valid.forEach(x=>{const k=x[0]+"::"+x[1]; state.selected.add(k); if(x[2]) state.assign[k]=[x[2]];});
+    persist();
+    state.selectedOnly=true; $("#selectedOnly").checked=true;
+    setTimeout(()=>alert(valid.length+" livros da seleção compartilhada foram carregados. Você pode editar, exportar Excel/PDF ou compartilhar de novo."),50);
+  }catch(e){console.error(e);alert("Não foi possível ler este link de seleção.");}
+  history.replaceState(null,"",location.pathname+location.search);
+}
+$("#shareBtn").onclick=async()=>{
+  if(!state.selected.size)return;
+  const url=shareLink();
+  try{await navigator.clipboard.writeText(url);alert("Link copiado! Cole no e-mail ou WhatsApp.\nQuem abrir verá os "+state.selected.size+" livros e poderá trabalhar na própria cópia.");}
+  catch(e){prompt("Copie o link abaixo (Ctrl+C):",url);}
+};
